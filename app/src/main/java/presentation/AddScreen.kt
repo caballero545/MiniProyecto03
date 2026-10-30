@@ -59,8 +59,11 @@ fun AddScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            fotoUriStr = uri.toString()
-            bitmapPreview = null
+            val permanentPath = copyUriToFile(context, uri)
+            if (permanentPath != null) {
+                fotoUriStr = permanentPath
+                bitmapPreview = null
+            }
         }
     }
 
@@ -200,4 +203,22 @@ fun saveBitmapToFile(context: Context, bitmap: Bitmap): String {
     fos.flush()
     fos.close()
     return Uri.fromFile(file).toString()
+}
+
+// Función auxiliar para copiar cualquier URI (galería o archivos) a un archivo físico permanente en caché
+fun copyUriToFile(context: Context, uri: Uri): String? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val file = File(context.cacheDir, "${System.currentTimeMillis()}.jpg")
+        val outputStream = FileOutputStream(file)
+        inputStream?.use { input ->
+            outputStream.use { output ->
+                input.copyTo(output)
+            }
+        }
+        Uri.fromFile(file).toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }
